@@ -1,1 +1,1 @@
-# matrix_vector_multiplier
+# NxN Matrix x Nx1 Vector Multiplication IP

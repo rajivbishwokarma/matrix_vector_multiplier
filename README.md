@@ -13,15 +13,23 @@ The general architecture of the core multiplier module can be seen in the figure
 Inside the core are NxN highly parallelized floating point multiplication modules that calculate the partial matrices in a minimum of 2 clock cycles. The output from this module is a NxN partial matrix. These outputs are then fed into another set of highly parallelized floating point accumulators. These floating point accumulators calculate the output in N clock cycles, where N is the size of the input matrix and vector.
 
 <br><br>
-# Output Verification
+# Output Verification, N = 2
 
 When N is set to 2, the module generates a 2x2 matrix - 2x1 vector multiplier. The input output simulation waveform for N=2 can be seen below. 
 
 <img src="./img/output_2x2.png">
 
+<<br><br>
+
+# Output Verification, N = 3
+When N is set to 3, the module generates a 3x3 matrix - 3x1 vector multiplier. The output simulation waveform for N=3 can be seen below. 
+
+
+<img src="./img/Matrix3x3_OK.png">
 
 <br><br>
 
-# Limitation
-When set to N = 10, the output is generates but the correctness cannot yet be verified. Take a look at the following waveform for a general sense. 
-<img src="./img/Matrix10x10.png">
+# Output Verification, N = 10
+When N is set to 3, the module generates a 10x10 matrix - 10x1 vector multiplier. The output simulation waveform for N=10 can be seen below. 
+
+<img src="./img/Matrix10x10_OK.jpg">

@@ -226,7 +226,7 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
                 .o_accumulator_is_ready_for_data( w_accumulator_waiting_for_data[adder_row_idx] ),
                 .o_output_result_valid          ( w_accumulator_result_is_valid[adder_row_idx]  ),
                 .o_this_is_last_result          ( w_last_result_before_accumulator_reset[adder_row_idx]),
-                .i_matrix_row                   ( r_matrix_row_element[adder_row_idx]           ),  
+                .i_matrix_row                   ( r_matrix_row_element[adder_row_idx]           ),  // put this block inside a loop
                 .o_sum_row                      ( w_accumulated_row_sum[adder_row_idx]          )
                 );
                 

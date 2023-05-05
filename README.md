@@ -32,4 +32,8 @@ When N is set to 3, the module generates a 3x3 matrix - 3x1 vector multiplier. T
 # Output Verification, N = 10
 When N is set to 3, the module generates a 10x10 matrix - 10x1 vector multiplier. The output simulation waveform for N=10 can be seen below. 
 
-<img src="./img/Matrix10x10_OK.jpg">
+<img src="./img/Matrix10x10_OKB.jpg">
+
+Let's see what are where. 
+
+<img src="./img/Matrix10x10_OK_Analysis.jpg">

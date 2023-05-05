@@ -1,1 +1,1 @@
-# NxN Matrix x Nx1 Vector Multiplication IP
+# Matrix[NxN] x Vector[Nx1] Multiplication IP

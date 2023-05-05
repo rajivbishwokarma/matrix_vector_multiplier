@@ -19,13 +19,23 @@ When N is set to 2, the module generates a 2x2 matrix - 2x1 vector multiplier. T
 
 <img src="./img/output_2x2.png">
 
-<<br><br>
+Following is the output received from MATLAB
+
+<img width=100 src="./img/matrix2x2_vector2x1.png">
+
+
+
+<br><br>
 
 # Output Verification, N = 3
 When N is set to 3, the module generates a 3x3 matrix - 3x1 vector multiplier. The output simulation waveform for N=3 can be seen below. 
 
 
 <img src="./img/Matrix3x3_OK.png">
+
+Following is the output received from MATLAB
+
+<img width=200 src="./img/matrix3x3_vector3x1.png">
 
 <br><br>
 
@@ -37,3 +47,7 @@ When N is set to 3, the module generates a 10x10 matrix - 10x1 vector multiplier
 Let's see what are where. 
 
 <img src="./img/Matrix10x10_OK_Analysis.jpg">
+
+Following is the output received from MATLAB
+
+<img width=300 src="./img/matrix10x10_vector10x1.png">

@@ -42,7 +42,7 @@ Following is the output received from MATLAB
 # Output Verification, N = 10
 When N is set to 3, the module generates a 10x10 matrix - 10x1 vector multiplier. The output simulation waveform for N=10 can be seen below. 
 
-<img src="./img/Matrix10x10_OKB.jpg">
+<img src="./img/Matrix10x10_OKC.jpg">
 
 Let's see what are where. 
 

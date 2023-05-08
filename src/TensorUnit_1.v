@@ -13,7 +13,7 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
     input   i_matrix_is_valid,
     input   i_vector_is_valid,
     input   i_receiver_ready_for_result, // input to the accumulator
-    input   i_accumulator_waiting_for_data, // output from accumulator
+    //input   i_accumulator_waiting_for_data, // output from accumulator
     output  o_ready_to_accept_matrix,
     output  o_ready_to_accept_vector,
     output  o_result_is_valid,
@@ -22,7 +22,6 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
     // DATA
     input  [(D_WIDTH) * (M_SIZE) * (M_SIZE) - 1:0]  i_matrix,
     input  [(D_WIDTH) * (M_SIZE)            - 1:0]  i_vector,
-    //output [(D_WIDTH) * (M_SIZE) * (M_SIZE) - 1:0]  o_partial_matrix
     
     output [(D_WIDTH) * (M_SIZE)            - 1:0]  o_result
 );
@@ -44,16 +43,12 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
     
     
     // Internal interfacing signals for MATRIX_VECTOR_MULTIPLIER
-    reg r_s_axis_partial_tready;
     wire w_s_axis_partial_tvalid_all;
     wire w_m_axis_i_matrix_ready [0:M_SIZE-1][0:M_SIZE-1];
     wire w_m_axis_i_vector_ready [0:M_SIZE-1][0:M_SIZE-1];
     wire w_s_axis_partial_tvalid [0:M_SIZE-1][0:M_SIZE-1];
     
     // Internal interfacing signals for ACCUMULATOR
-    wire w_s_axis_accumulate_a_tready;
-    wire w_s_axis_accumulate_a_tlast;
-    wire w_m_axis_accumulate_result_tvalid;
     
     /* Here, the following block multiplies all the matrix elements with the vector and stores the result in partial matrix */
     /* 
@@ -65,6 +60,7 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
      * | a[1][0] a[1][1] a[1][2] |  x  | b[1] | =  | a[1][0]*b[0]   a[1][1]*b[1]   a[1][2]*b[2] |
      * | a[2][0] a[2][1] a[2][2] |     | b[2] |    | a[2][0]*b[0]   a[2][1]*b[1]   a[2][2]*b[2] |
      */
+     
     genvar row, element;
     generate
         for (row = 0; row < M_SIZE; row = row + 1) begin
@@ -73,14 +69,14 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
                 fp_multiply_ab MATRIX_VECTOR_MULTIPLIER (
                     .aclk                   ( aclk                                  ),      // input wire aclk
                     .aresetn                ( aresetn                               ),      // input wire aresetn
-                    .s_axis_a_tvalid        ( i_matrix_is_valid               ),      // input wire s_axis_a_tvalid
+                    .s_axis_a_tvalid        ( i_matrix_is_valid                     ),      // input wire s_axis_a_tvalid
                     .s_axis_a_tready        ( w_m_axis_i_matrix_ready[row][element] ),      // output wire s_axis_a_tready
                     .s_axis_a_tdata         ( wi_matrix[row][element]               ),      // input wire [31 : 0] s_axis_a_tdata
-                    .s_axis_b_tvalid        ( i_vector_is_valid               ),      // input wire s_axis_b_tvalid
+                    .s_axis_b_tvalid        ( i_vector_is_valid                     ),      // input wire s_axis_b_tvalid
                     .s_axis_b_tready        ( w_m_axis_i_vector_ready[row][element] ),      // output wire s_axis_b_tready
                     .s_axis_b_tdata         ( wi_vector[element]                    ),      // input wire [31 : 0] s_axis_b_tdata
                     .m_axis_result_tvalid   ( w_s_axis_partial_tvalid[row][element] ),      // output wire m_axis_result_tvalid
-                    .m_axis_result_tready   ( i_accumulator_waiting_for_data  ),      // accumulator is ready for input  /// LOOK OUT FOR THIS!
+                    .m_axis_result_tready   ( w_accumulator_waiting_for_data[row]   ),      // accumulator is ready for input  /// LOOK OUT FOR THIS!
                     .m_axis_result_tdata    ( w_partial[row][element]               )       // output wire [31 : 0] m_axis_result_tdata
                 );
                 
@@ -93,7 +89,6 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
     assign o_ready_to_accept_vector    = w_m_axis_i_vector_ready[0][0];
     assign w_s_axis_partial_tvalid_all = w_s_axis_partial_tvalid[0][0];
     
-    reg [(D_WIDTH) * (M_SIZE) * (M_SIZE) - 1:0]  r_output_matrix;
     
     /* If all of the partials are calculated, then assign it to a temporary memory */
     /* This is in case we need to pipeline the whole design. */
@@ -132,47 +127,45 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
     reg [1:0]   state;                
     reg [4:0]   row_idx, col_idx;
     
-    reg [D_WIDTH-1:0] r_state_tracker = 0;
+    
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
-            // Reset the signals for PartialAdder_Pipeline control
             r_external_receiver_ready   <= 1'b0;
             r_input_data_is_valid       <= 1'b0;
-            r_state_tracker             <= 0;
             col_idx                     <= 0;
             state                       <= IDLE;
             
         end else begin
-        
+            
             if (w_s_axis_partial_tvalid_all) begin
             
                 /* assert data is valid as all partials have been calculated */
                 r_input_data_is_valid       <= 1'b1;
                 r_external_receiver_ready   <= i_receiver_ready_for_result;
                 
-                /* control path: we now shift the elements of the partial matrix one by one to the input to the accumulator */
-                case (state)
-                
-                    IDLE:   state <= (r_input_data_is_valid) ? LOAD : IDLE;
-                    
-                    LOAD:   
-                    begin
-                        if (r_state_tracker < M_SIZE) state <= LOAD;
-                        else                          state <= IDLE;
-                        
-                        if (o_this_is_the_last_result) state <= IDLE;
-                        
-                        r_state_tracker <= r_state_tracker + 1;
-                        col_idx         <= col_idx + 1;
-                    end
-                    default:state <= IDLE;
-                
-                endcase
-                
             end else begin
-                r_input_data_is_valid       <= 1'b0;
+                r_input_data_is_valid       <= (!r_last_input_to_accumulator) ? r_input_data_is_valid : 1'b0;;
                 r_external_receiver_ready   <= 1'b0;
             end
+            
+            /* control path: we now shift the elements of the partial matrix one by one to the input to the accumulator */
+            case (state)
+            
+                IDLE:   state <= (r_input_data_is_valid) ? LOAD : IDLE;
+                
+                LOAD:   
+                begin
+                    if (col_idx < M_SIZE) state <= LOAD;
+                    else                          state <= IDLE;                     
+                    
+                    if (o_this_is_the_last_result) state <= IDLE;
+                    
+                    col_idx         <= col_idx + 1;
+                end
+                
+                default:state <= IDLE;
+            endcase
+            
         end
     end
     
@@ -181,21 +174,18 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
             /* data path: we now shift the elements of the partial matrix one by one to the input to the accumulator */
             case (state)
                 IDLE: begin
-                    //col_idx = 0;         
-                end
-                
+                      r_matrix_row_element[row_idx]   = {M_SIZE, {1'b0}};   
+                      r_last_input_to_accumulator     = 1'b0;
+                end       
                 LOAD: begin
-                        r_matrix_row_element[row_idx]       = r_partial_matrix[row_idx][col_idx];
-
-                        if (col_idx == (M_SIZE - 1))
+                        r_matrix_row_element[row_idx]       = (col_idx < M_SIZE) ? r_partial_matrix[row_idx][col_idx] : 0;
+                        
+                        if (col_idx == (M_SIZE - 1))  
                             r_last_input_to_accumulator     = 1'b1;
                         else
                             r_last_input_to_accumulator     = 1'b0;
                 end
-                
-                default:begin
-                        r_matrix_row_element[row_idx]   = {M_SIZE, {1'b0}};
-                end
+                default: r_matrix_row_element[row_idx]   = {M_SIZE, {1'b0}};
             endcase
         end
     end
@@ -213,27 +203,27 @@ module TensorUnit #(parameter D_WIDTH=32, M_SIZE=2) (
         end
     end
     
-    
     genvar adder_row_idx;
     generate
-        for (adder_row_idx = 0; adder_row_idx < M_SIZE; adder_row_idx = adder_row_idx + 1) begin
-            PartialAdder_Pipeline #(.D_WIDTH(D_WIDTH), .M_SIZE(M_SIZE)) PartialAdder_Pipleline_Inst (
-                .aclk                           ( aclk                                          ),
-                .aresetn                        ( aresetn                                       ),
-                .i_receiver_ready               ( r_external_receiver_ready                     ),
-                .i_input_data_is_valid          ( r_input_data_is_valid                         ),
-                .i_last_data_to_acumulator      ( r_last_input_to_accumulator                   ),
-                .o_accumulator_is_ready_for_data( w_accumulator_waiting_for_data[adder_row_idx] ),
-                .o_output_result_valid          ( w_accumulator_result_is_valid[adder_row_idx]  ),
-                .o_this_is_last_result          ( w_last_result_before_accumulator_reset[adder_row_idx]),
-                .i_matrix_row                   ( r_matrix_row_element[adder_row_idx]           ),  // put this block inside a loop
-                .o_sum_row                      ( w_accumulated_row_sum[adder_row_idx]          )
+        for (adder_row_idx = 0; adder_row_idx < M_SIZE; adder_row_idx = adder_row_idx + 1) begin                
+              fp_accumulator_ai ACCUMULATE_PARTIAL_ROW_0 (
+                  .aclk                 ( aclk                                                  ),
+                  .aresetn              ( aresetn                                               ),
+                  .s_axis_a_tvalid      ( r_input_data_is_valid                                 ),  // input wire : incoming data valid?
+                  .s_axis_a_tready      ( w_accumulator_waiting_for_data[adder_row_idx]         ),  // output wire s_axis_a_tready
+                  .s_axis_a_tdata       ( r_matrix_row_element[adder_row_idx]                   ),  // input wire [31 : 0] : elements from partial matrix
+                  .s_axis_a_tlast       ( r_last_input_to_accumulator                           ),  // input wire s_axis_a_tlast
+                  .m_axis_result_tvalid ( w_accumulator_result_is_valid[adder_row_idx]          ),  // output wire : is the output data valid?
+                  .m_axis_result_tready ( i_receiver_ready_for_result                           ),  // input wire : this is master, slave is ready for accepting data
+                  .m_axis_result_tdata  ( w_accumulated_row_sum[adder_row_idx]                  ),  // output wire [31 : 0] : row-wise sum available here
+                  .m_axis_result_tlast  ( w_last_result_before_accumulator_reset[adder_row_idx] )   // output wire, last calculated data
                 );
                 
         end
-        
     endgenerate
+
     assign o_this_is_the_last_result = w_last_result_before_accumulator_reset[0];
+    assign o_result_is_valid         = w_accumulator_result_is_valid[0];
     
     `PACK_VECTOR(D_WIDTH, M_SIZE, o_result, temp_sum)
 endmodule

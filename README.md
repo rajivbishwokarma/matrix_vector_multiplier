@@ -1,10 +1,26 @@
-# Floating Point Matrix-Vector Multiplier [IEEE 754 Single Precision Floating Point ]
+# Floating Point Matrix-Vector Multiplier [IEEE 754 Single Precision]
 
 ## Introduction 
 
-This is a floating point matrix-vector multiplier, that operates on a square matrix and a corresponding vector. The module is designed to be highly modular. By changing the parameter specified in the [TensorUnit](./src/TensorUnit.v), this IP can be customized for any square matrix of size NxN and the corresponding vector of Nx1 size. 
+This is a floating point matrix-vector multiplier, that operates on a square matrix and a corresponding vector. The module is designed to be highly modular. By changing the value of parameter **M_SIZE** specified in the [MatrixVector_Interface](./src/MatrixVector_Interface.v), this IP can be customized for any square matrix of size NxN and the corresponding vector of Nx1 size, i.e., N = 2, 3, ..., 10, ... 100 (depending on the requirement and FPGA capacity). 
+
+<img src="./img/GenArch.png">
+
+
+The [TensorUnit](./src/) is a highly parallel unit that takes in the whole matrix of size $ (D_WIDTH * M_SIZE * M_SIZE) $ and vector of size $ D_WIDTH * M_SIZE$ from their respect ports at once and then generates an output vector of size $ D_WIDTH * M_SIZE $ in a single port. However, to implement the whole unit at once, we will need a powerful FPGA with many I/Os. 
+
+Therefore, to make this unit modular, the [MatirxVector_Interface](./src/MatrixVector_Interface.v) has been implemented by using the AXI-Stream interface. This unit takes in one 32-bit floating point at a time until all of the N * N 32-bit numbers have been stored internally in the FPGA local memory and once the transmission of the matrix and vector data is done, it passes the data to the TensorUnit and receives the result and then transfers the result back to the processor one floating point number at a time until all of **M_SIZE** vector has been transmitted.
+
+| Parameter | Value | Description |
+|:---------:|:-----:|:-----------:|
+
+
 
 ## General Architecture
+
+
+
+## Core Architecture
 
 The general architecture of the core multiplier module can be seen in the figure below. 
 

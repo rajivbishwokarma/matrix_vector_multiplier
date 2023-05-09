@@ -7,9 +7,9 @@ This is a floating point matrix-vector multiplier, that operates on a square mat
 <img src="./img/GenArch.png">
 
 
-The [TensorUnit](./src/) is a highly parallel unit that takes in the whole matrix of size $ (M\_SIZE * M\_SIZE) $ and vector of size $ M\_SIZE$ from their respect ports at once and then generates an output vector of size $ M\_SIZE $ in a single port. However, to implement the whole unit at once, we will need a powerful FPGA with many I/Os. However, we need a design that can be implemented in any FPGA with a minimal change.
+The [TensorUnit](./src/) is a highly parallel unit that takes in the whole matrix of size  **(M_SIZE x M_SIZE)** and vector of size **M_SIZE x 1** from their respect ports at once and then generates an output vector of size **M_SIZE x 1** in a single port. However, to implement the whole unit at once, we will need a powerful FPGA with many I/Os. Therefore, we need a design that can be implemented in any FPGA with a minimal change.
 
-Therefore, to make this unit modular, the [MatirxVector_Interface](./src/MatrixVector_Interface.v) has been implemented by using the AXI-Stream interface. This unit takes in one 32-bit floating point at a time until all of the N * N 32-bit numbers have been stored internally in the FPGA local memory and once the transmission of the matrix and vector data is done, it passes the data to the TensorUnit and receives the result and then transfers the result back to the processor one floating point number at a time until all of **M_SIZE** vector has been transmitted.
+To make this unit modular, the [MatirxVector_Interface](./src/MatrixVector_Interface.v) has been implemented by using the AXI-Stream interface. This unit takes in one 32-bit floating point at a time until all of the N * N 32-bit numbers have been stored internally in the FPGA local memory and once the transmission of the matrix and vector data is done, it passes the data to the TensorUnit and receives the result and then transfers the result back to the processor one floating point number at a time until all of **M_SIZE** vector has been transmitted.
 
 |M_SIZE| Parameter | Value | Description |
 |:----:|:---------:|:-----:|:-----------:|

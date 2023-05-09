@@ -76,3 +76,28 @@ Following is the output received from MATLAB
 The following waveform image shows the data transfer with the MatrixVector_Interface. 
 
 <img src="./img/matrix_interface_10x10_latency.png">
+
+<br>
+
+# FPGA Implementation and the driver
+
+## Block Design
+TThe **MatrixVector_Interfa_0** in the following image is the main IP that has been developed. The multiplier IP is connected to the Zynq UltraScale+ Processing System (PS) through the DMA controller using the AXI-Stream Interface.
+
+<img src="./img/zynq_block.png">
+
+The FPGA implementation bitstream file corresponding to this design can be found here: [zynq_matrix_hw.bit](./hw/zynq_matrix_hw.bit)
+
+<br>
+
+## Summary Reports on Timing and Power Analysis. 
+
+Power used by the multiplication IP is shown in the green (PL), which is 0.303 W for **M_SIZE = 10**.
+
+<div align="center">
+    <img src="./img/zynq_power.png">
+</div>
+
+<div align="center">
+    <img src="./img/zynq_timing.png">
+</div>

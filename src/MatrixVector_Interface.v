@@ -151,6 +151,11 @@ module MatrixVector_Interface #(parameter D_WIDTH=32, M_SIZE=10) (
     // unroll the result vector, for easier data shifting the the always block below
     `UNPACK_VECTOR(D_WIDTH, M_SIZE, w_result_unpacked, w_result_packed)
     
+
+    /* Sending process is simple: 
+     * 1. Recieve all the data in the wire: w_result_unpacked
+     * 2. Start sending the data in each clock cylce until all the data is sent
+     */
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
             m_axis_result_valid <= 1'b0;
